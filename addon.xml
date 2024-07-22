@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.latinsports" name="Latin Sports" version="1.0.0" provider-name="Gigoro">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0" />
+    <import addon="script.module.codequick" version="0.9.10" />
+    <import addon="script.module.beautifulsoup4" version="4.0.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="addon.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Addon para ver retrasmiciones en vivo de diferentes paginas de deportes</summary>
+    <description lang="es_ES">Addon para ver retrasmiciones en vivo de diferentes paginas de deportes</description>
+    <disclaimer lang="es_ES"></disclaimer>
+    <language>es</language> <!-- language of the content the add-on provides, omit if the add-on does not provide any content -->
+    <platform>all</platform>
+    <license>GPL-3.0-or-later</license>
+    <source>https://github.com/gigoro33/plugin.video.LatinSports</source>
+    <assets>
+        <icon>resources/icon.png</icon>
+        <fanart>resources/fanart.jpg</fanart>
+        <clearlogo>resources/clearlogo.png</clearlogo> <!-- optional -->
+    </assets>
+  </extension>
+</addon>
