@@ -1,10 +1,11 @@
 from codequick import Route, Listitem, run
-from resources.lib.chanels.teleXtrema import *
+from resources.lib.chanels.teleXtrema import listItemsTeleXtrema
+from resources.lib.chanels.tuCanalDeportivo import listItemsTuCanalDeportivo
 
 # Base items constructor
 dict_constructor = [
-    {"label": "TeleXtrema", "art": "https://www.telextrema.com/imge/telextrema.png", "url": "https://www.telextrema.com", "chanel": "TeleXtrema"},
-    {"label": "Tu Canal Deportivo", "art": "", "url": "https://tucanaldeportivo.org/canales.php", "chanel": "canalDeportivo"}
+    {"label": "TeleXtrema", "art": "https://www.telextrema.com/imge/telextrema.png", "chanel": "TeleXtrema"},
+    {"label": "Tu Canal Deportivo", "art": "", "chanel": "canalDeportivo"}
 ]
 
 @Route.register
@@ -14,14 +15,7 @@ def root(plugin):
         item.label = elem["label"]
         item.art["thumb"] = elem["art"]
         if elem["chanel"] == "TeleXtrema":
-            item.set_callback(listItemsTeleXtrema, url=elem["url"])
+            item.set_callback(listItemsTeleXtrema)
         elif elem["chanel"] == "canalDeportivo":
-            item.set_callback(chanel_list, url=elem["url"], chanel=elem["chanel"])
+            item.set_callback(listItemsTuCanalDeportivo)
         yield item
-
-@Route.register
-def chanel_list(plugin, url, chanel):
-    if chanel == "TeleXtrema":
-        set_callback(listItemsTeleXtrema(url, chanel))
-    elif chanel == "canalDeportivo":
-        none

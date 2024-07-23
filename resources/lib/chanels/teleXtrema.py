@@ -1,14 +1,19 @@
 from bs4 import BeautifulSoup
-from codequick import Route, Listitem, Resolver
+from codequick import Route, Listitem, Resolver, utils
 import requests
 import re
 import base64
 from urllib.parse import urlparse
 import resources.lib.jsunpack as jsunpack
 
+# Base url constructor
+url_constructor = utils.urljoin_partial("https://www.telextrema.com")
+
+
 @Route.register
-def listItemsTeleXtrema(plugin, url):    
+def listItemsTeleXtrema(plugin):    
     # Request the online resource.
+    url = url_constructor("")
     response = requests.get(url)
 
     # Parse the html source
@@ -49,7 +54,7 @@ def listItemsOPtionStreams(plugin,url, plot, art):
 
 def get_iframe_url(url):
     headers = {
-        'Referer': 'https://www.telextrema.com'
+        'Referer': url_constructor("")
     }
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -66,7 +71,7 @@ def play_video(plugin, url):
     url = get_iframe_url(url)
     stream_url = ''
     headers = {
-        'Referer': 'https://www.telextrema.com'
+        'Referer': url_constructor("")
     }
 
     response = requests.get(url, headers=headers)
