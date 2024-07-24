@@ -1,10 +1,7 @@
 from bs4 import BeautifulSoup
 from codequick import Route, Listitem, Resolver, utils
 import requests
-import xbmc
 import re
-import xbmcgui
-from urllib.parse import urlparse
 
 url_constructor = utils.urljoin_partial("https://tucanaldeportivo.org")
 
@@ -26,23 +23,51 @@ def listItemsTuCanalDeportivo(plugin):
 
 @Route.register
 def agendaDeportiva(plugin):
-     url = url_constructor("/agenda.php")
+    url = url_constructor("/agenda.php")
+    response = requests.get(url)
+    # Parse the html source
+    soup = BeautifulSoup(response.text, 'html.parser')
+    elements = soup.find_all('li', class_=True)
+    for elem in elements:
+        item = Listitem()
+        hora = elem.find('a', href="#").find('span').get_text(strip=True) #Extract hour
+        elem.find('a', href="#").find('span').extract() #Remove span tag with hour
+        desc = hora + " " + elem.find('a', href="#").get_text(strip=True)
+        # Set the plot info
+        item.info["plot"] = desc
+        # Set the label info
+        item.label = desc
+        links_dic = {}
+        links = elem.find("ul").find_all('li', class_=False)
+        for idx, link in enumerate(links, start=1):
+            links_dic[f"enlace_{idx}"] = {
+                "url": link.find('a').get("href"),
+                "desc": desc,
+                "nom_canal": link.find('a').get_text(strip=True)
+            }
+        item.set_callback(canales_eventos, links=links_dic)
+        # Return the listitem as a generator.
+        yield item
+            
+@Route.register
+def canales_eventos(plugin, links):
+    for clave, link in links.items():
+        item = Listitem()
+        item.label = str(link["nom_canal"])
+        item.info["plot"] = str(link["desc"])
+        item.set_callback(play_video, url_base=str(link["url"]))
+        yield item
 
 @Route.register
 def canales(plugin):
     url = url_constructor("/canales.php")
     response = requests.get(url)
-
     # Parse the html source
     soup = BeautifulSoup(response.text, 'html.parser')
-
     elements = soup.find_all('div', {"class": "card-wrapper"})
-    
     # Parse each video
     for elem in elements:
-        
         soup2 = BeautifulSoup(str(elem), 'html.parser')
-        
         elements2 = soup2.find_all('a')
         for elem2 in elements2:
             item = Listitem()
@@ -58,98 +83,28 @@ def canales(plugin):
             # Return the listitem as a generator.
             yield item
             
-def obtener_url_base(url):
-    parsed_url = urlparse(url)
-    url_base = parsed_url.scheme + "://" + parsed_url.netloc
-    return url_base
-            
 @Resolver.register
 def play_video(plugin, url_base):
     headers = {
         'Referer': url_constructor("")
     }
-
-    response = requests.get(url_base, headers=headers)
-
-    # Verificar si la solicitud fue exitosa (código de estado 200)
-    html_content = response.text
-    # Patrón de expresión regular para extraer el valor del atributo src en el iframe
-    pattern = re.compile(r'<div\s+class="video-container"\s*>\s*<iframe[^>]*src="([^"]+)"[^>]*>', re.DOTALL)
-
+    response = requests.get(url_base, headers=headers) 
+    soup = BeautifulSoup(response.text, "html.parser")
+    url = soup.find('iframe').get("src")
+        
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+    fid = soup.find('script', text=lambda text: text and 'fid' in text).text.split('"')[1]
+    url2 = soup.find('script', src=lambda src: src and src.startswith('//'))["src"]
+    url2 = "https:" + url2.replace(".js", '.php') + '?player=desktop&live=' + fid
+    
+    response = requests.get(url2, headers=headers)
+    pattern = re.compile(r'return\(\[(.*?)\]', re.DOTALL)
     # Buscar coincidencias utilizando search
-    match = pattern.search(html_content)
-
+    match = pattern.search(response.text)
     # Obtener el valor del atributo src si hay coincidencia
-    if match:
-        src_value = match.group(1)
-
-        headers = {
-            'Referer': url_constructor("")
-        }
-
-        response = requests.request("GET", src_value, headers=headers)
-
-        if response.status_code == 200:
-                html_content = response.text
-
-                #  Expresión regular para extraer el atributo src del script que contiene la url del stream
-                pattern = re.compile(r'<script\s+type="text/javascript"\s+src=["\']?([^"\'>]+)["\']?\s*>', re.DOTALL)
-
-                # Buscar el src del script
-                match = pattern.search(html_content)
-
-                # Si se encuentra el src, extraerlo
-                if match:
-                    # src = obtener_url_base("https:" + match.group(1))
-                    src = "https:" + match.group(1).replace('js', 'php')
-                else:
-                    xbmc.log("No se encontró el atributo src en el script. URL: " + src_value, xbmc.LOGERROR)
-                    xbmcgui.Dialog().notification('[B]Error[/B]', 'No se encontró el atributo src en el script.',xbmcgui.NOTIFICATION_INFO, 6000,False)
-                    sys.exit(1)
-                    
-                # Patrón de expresión regular para extraer el valor del atributo src en el iframe
-                pattern = re.compile(r'fid="(.*?)"', re.DOTALL)
-
-                # Buscar coincidencias utilizando search
-                match = pattern.search(html_content)
-
-                # Obtener el valor del atributo src si hay coincidencia
-                if match:
-                    fid = match.group(1)
-
-                    headers = {
-                        'Referer': obtener_url_base(url_base)
-                    }
-
-                    response = requests.get(src +"?player=desktop&live="+fid, headers=headers)
-
-                    if response.status_code == 200:
-                            html_content = response.text
-                            # Patrón de expresión regular para extraer el valor del atributo src en el iframe
-                            pattern = re.compile(r'return\(\[(.*?)\]', re.DOTALL)
-
-                            # Buscar coincidencias utilizando search
-                            match = pattern.search(html_content)
-
-                            # Obtener el valor del atributo src si hay coincidencia
-                            if match:
-                                    
-                                url_video = match.group(1)
-                                url_video = url_video.replace(',', '').replace('\\', '').replace('"', '')
-                                url_video = url_video + "|Referer=" + obtener_url_base(src)
-                                return url_video
-                            else:
-                                xbmc.log("No se encontró el valor de src en el código HTML. URL: " + src +"?player=desktop&live="+fid, xbmc.LOGERROR)
-                                xbmcgui.Dialog().notification('[B]Error[/B]', 'No se encontró el valor de src en el código HTML..',xbmcgui.NOTIFICATION_INFO, 6000,False)
-                                sys.exit(1)
-                    else:
-                        raise ValueError(f"Error al hacer la solicitud. Código de estado: {response.status_code}")
-                else:
-                    xbmc.log("No se encontró el valor de Id del canal en el código HTML. URL: " + src_value, xbmc.LOGERROR)
-                    xbmcgui.Dialog().notification('[B]Error[/B]', 'No se encontró el valor de src en el código HTML.',xbmcgui.NOTIFICATION_INFO, 6000,False)
-                    sys.exit(1)
-        else:
-            raise ValueError(f"Error al hacer la solicitud. Código de estado: {response.status_code}")
-
-    else:
-        raise ValueError(f"No se encontró el valor de src en el código HTML.")
+    if match:                       
+        url_video = match.group(1)
+        url_video = url_video.replace(',', '').replace('\\', '').replace('"', '')
+        url_video = url_video + "|Referer=" + url2
+        return url_video

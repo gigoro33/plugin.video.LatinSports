@@ -5,6 +5,7 @@ import re
 import base64
 from urllib.parse import urlparse
 import resources.lib.jsunpack as jsunpack
+import xbmc
 
 # Base url constructor
 url_constructor = utils.urljoin_partial("https://www.telextrema.com")
@@ -15,7 +16,8 @@ def listItemsTeleXtrema(plugin):
     # Request the online resource.
     url = url_constructor("")
     response = requests.get(url)
-
+    response.encoding = 'utf-8'
+    
     # Parse the html source
     soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -38,6 +40,7 @@ def listItemsTeleXtrema(plugin):
 @Route.register
 def listItemsOPtionStreams(plugin,url, plot, art):
     response = requests.get(url)
+    response.encoding = 'utf-8'
     
     soup = BeautifulSoup(response.text, 'html.parser')
     
