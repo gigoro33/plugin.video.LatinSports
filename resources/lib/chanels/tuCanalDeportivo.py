@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 from codequick import Route, Listitem, Resolver, utils
 import requests
 import re
+from dateutil import tz, parser
+from datetime import datetime
 
 url_constructor = utils.urljoin_partial("https://tucanaldeportivo.org")
 
@@ -30,7 +32,16 @@ def agendaDeportiva(plugin):
     elements = soup.find_all('li', class_=True)
     for elem in elements:
         item = Listitem()
-        hora = elem.find('a', href="#").find('span').get_text(strip=True) #Extract hour
+        
+        hora = elem.find('a', href="#").find('span').get_text(strip=True) #Extract hour    
+        hora_utc2 = parser.parse(hora).time() 
+        zona_horaria_utc2 = tz.gettz('UTC+2') # Definir la zona horaria UTC+2
+        zona_horaria_utc5 = tz.gettz() # Obtener la zona horaria del usuario
+        fecha_referencia = datetime.now() # Crear un objeto datetime combinando la hora UTC+2 con una fecha de referencia
+        hora_utc2_dt = fecha_referencia.replace(hour=hora_utc2.hour, minute=hora_utc2.minute, tzinfo=zona_horaria_utc2)
+        hora_utcUsua_dt = hora_utc2_dt.astimezone(zona_horaria_utc5) # Cambiar la zona horaria de UTC+2 a UTC del usuario
+        hora = hora_utcUsua_dt.time().strftime("%H:%M") # Extraer la hora en formato time
+        
         elem.find('a', href="#").find('span').extract() #Remove span tag with hour
         desc = hora + " " + elem.find('a', href="#").get_text(strip=True)
         # Set the plot info
