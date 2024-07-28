@@ -23,6 +23,7 @@
       <screenshot>resources/images/screenshot-1.jpg</screenshot>
       <screenshot>resources/images/screenshot-2.jpg</screenshot>
     </assets>
+    <news>1.0.5 Se Se corrige la reprodución de algunos canales en la opción de agenda deportiva para tucanaldeportivo.org</news>
     <news>1.0.4 Se añade opcion de agenda deportiva para tucanaldeportivo.org</news>
     <news>1.0.3 Se añade opciones de reproduciion para teleXtrema y se corrige el charset</news>
     <news>1.0.2 Se refactoriza el codigo y se simplifica se cambia el dominio tucanaldeportivo.com por tucanaldeportivo.org</news>
