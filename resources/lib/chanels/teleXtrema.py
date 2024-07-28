@@ -5,7 +5,6 @@ import re
 import base64
 from urllib.parse import urlparse
 import resources.lib.jsunpack as jsunpack
-import xbmc
 
 # Base url constructor
 url_constructor = utils.urljoin_partial("https://www.telextrema.com")

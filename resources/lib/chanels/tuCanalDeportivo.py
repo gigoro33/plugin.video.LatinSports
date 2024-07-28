@@ -4,6 +4,8 @@ import requests
 import re
 from dateutil import tz, parser
 from datetime import datetime
+import base64
+from urllib.parse import urlparse, parse_qs
 
 url_constructor = utils.urljoin_partial("https://tucanaldeportivo.org")
 
@@ -101,21 +103,31 @@ def play_video(plugin, url_base):
     }
     response = requests.get(url_base, headers=headers) 
     soup = BeautifulSoup(response.text, "html.parser")
-    url = soup.find('iframe').get("src")
-        
+    url = soup.find('iframe').get("src")        
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
-    fid = soup.find('script', text=lambda text: text and 'fid' in text).text.split('"')[1]
-    url2 = soup.find('script', src=lambda src: src and src.startswith('//'))["src"]
-    url2 = "https:" + url2.replace(".js", '.php') + '?player=desktop&live=' + fid
     
-    response = requests.get(url2, headers=headers)
-    pattern = re.compile(r'return\(\[(.*?)\]', re.DOTALL)
-    # Buscar coincidencias utilizando search
-    match = pattern.search(response.text)
-    # Obtener el valor del atributo src si hay coincidencia
-    if match:                       
-        url_video = match.group(1)
-        url_video = url_video.replace(',', '').replace('\\', '').replace('"', '')
-        url_video = url_video + "|Referer=" + url2
-        return url_video
+    if soup.find('iframe'):
+        url2 = soup.find('iframe').get("src")
+        parsed_url = urlparse(url2)
+        url_parameters = parse_qs(parsed_url.query)
+        if "url" in url_parameters and 'http' not in url_parameters["url"][0]:
+            return base64.b64decode(url_parameters["url"][0])
+        elif "get" in url_parameters and 'http' in url_parameters["get"][0]:
+            return url_parameters["get"][0]
+
+    else:
+        fid = soup.find('script', text=lambda text: text and 'fid' in text).text.split('"')[1]
+        url2 = soup.find('body').find('script', src=lambda src: src and src.startswith('//'))["src"]
+        url2 = "https:" + url2.replace(".js", '.php') + '?player=desktop&live=' + fid
+        
+        response = requests.get(url2, headers=headers)
+        pattern = re.compile(r'return\(\[(.*?)\]', re.DOTALL)
+        # Buscar coincidencias utilizando search
+        match = pattern.search(response.text)
+        # Obtener el valor del atributo src si hay coincidencia
+        if match:                       
+            url_video = match.group(1)
+            url_video = url_video.replace(',', '').replace('\\', '').replace('"', '')
+            url_video = url_video + "|Referer=" + url2
+            return url_video
