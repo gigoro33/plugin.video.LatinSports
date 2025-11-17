@@ -2,12 +2,14 @@ from codequick import Route, Listitem, run
 from resources.lib.chanels.tvporinternet import listItemsTvPorInternet
 from resources.lib.chanels.tuCanalDeportivo import listItemsTuCanalDeportivo
 from resources.lib.chanels.futbolLibre import listItemsFutbolLibre
+from resources.lib.chanels.la14Hd import listItemsLa14Hd
 
 # Base items constructor
 dict_constructor = [
     {"label": "TV Por Internet", "art": "tvporinternetoficial.png", "chanel": "tvPorInternet"},
     {"label": "Tu Canal Deportivo", "art": "canalDeportivo.png", "chanel": "canalDeportivo"},
-    {"label": "Futbol Libre HD", "art": "futbolLibre.png", "chanel": "futbolLibre"}
+    {"label": "Futbol Libre HD", "art": "futbolLibre.png", "chanel": "futbolLibre"},
+    {"label": "La 14 HD", "art": "la14hd.png", "chanel": "la14hd"}
 ]
 
 @Route.register
@@ -22,4 +24,6 @@ def root(plugin):
             item.set_callback(listItemsTuCanalDeportivo)
         elif elem["chanel"] == "futbolLibre":
             item.set_callback(listItemsFutbolLibre)
+        elif elem["chanel"] == "la14hd":
+            item.set_callback(listItemsLa14Hd)
         yield item
