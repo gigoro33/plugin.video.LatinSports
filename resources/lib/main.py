@@ -9,7 +9,8 @@ dict_constructor = [
     {"label": "TV Por Internet", "art": "tvporinternetoficial.png", "chanel": "tvPorInternet"},
     {"label": "Tu Canal Deportivo", "art": "canalDeportivo.png", "chanel": "canalDeportivo"},
     {"label": "Futbol Libre HD", "art": "futbolLibre.png", "chanel": "futbolLibre"},
-    {"label": "La 14 HD", "art": "la14hd.png", "chanel": "la14hd"}
+    {"label": "La 14 HD", "art": "la14hd.png", "chanel": "la14hd"},
+    {"label": "Pelota Libre", "art": "pelotaLibre.png", "chanel": "pelotaLibre"}
 ]
 
 @Route.register
@@ -25,5 +26,7 @@ def root(plugin):
         elif elem["chanel"] == "futbolLibre":
             item.set_callback(listItemsFutbolLibre)
         elif elem["chanel"] == "la14hd":
+            item.set_callback(listItemsLa14Hd)
+        elif elem["chanel"] == "pelotaLibre":
             item.set_callback(listItemsLa14Hd)
         yield item

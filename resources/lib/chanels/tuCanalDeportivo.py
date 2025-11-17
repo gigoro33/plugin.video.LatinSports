@@ -6,8 +6,9 @@ from dateutil import tz, parser
 from datetime import datetime
 import base64
 from urllib.parse import urlparse, parse_qs
+import simplejson as json
 
-url_constructor = utils.urljoin_partial("https://tucanaldeportivo.org")
+url_constructor = utils.urljoin_partial("https://elcanaldeportivo.com")
 
 @Route.register
 def listItemsTuCanalDeportivo(plugin):
@@ -27,36 +28,34 @@ def listItemsTuCanalDeportivo(plugin):
 
 @Route.register
 def agendaDeportiva(plugin):
-    url = url_constructor("/agenda.php")
+    url = url_constructor("partidos.json")
     response = requests.get(url)
+    data = json.loads(response.text)
+    # Zona local dinámica (la que tenga el sistema)
+    local_zone = tz.tzlocal()
+    # Obtener la fecha/hora actual local
+    ahora_local = datetime.now(local_zone).date() # Fecha local actual (sin hora)
+
+    # Filtrar: dejar SOLO partidos cuya hora sea >= ahora
+    data = [p for p in data if hora_local(p).date() >= ahora_local]
+    data = sorted(data, key=lambda p: parser.isoparse(p["hora_utc"])) #Ordenar por horas
     # Parse the html source
-    soup = BeautifulSoup(response.text, 'html.parser')
-    elements = soup.find_all('li', class_=True)
-    for elem in elements:
+    for partido in data:
         item = Listitem()
-        
-        hora = elem.find('a', href="#").find('span').get_text(strip=True) #Extract hour    
-        hora_utc2 = parser.parse(hora).time() 
-        zona_horaria_utc2 = tz.gettz('UTC+2') # Definir la zona horaria UTC+2
-        zona_horaria_utc5 = tz.gettz() # Obtener la zona horaria del usuario
-        fecha_referencia = datetime.now() # Crear un objeto datetime combinando la hora UTC+2 con una fecha de referencia
-        hora_utc2_dt = fecha_referencia.replace(hour=hora_utc2.hour, minute=hora_utc2.minute, tzinfo=zona_horaria_utc2)
-        hora_utcUsua_dt = hora_utc2_dt.astimezone(zona_horaria_utc5) # Cambiar la zona horaria de UTC+2 a UTC del usuario
-        hora = hora_utcUsua_dt.time().strftime("%H:%M") # Extraer la hora en formato time
-        
-        elem.find('a', href="#").find('span').extract() #Remove span tag with hour
-        desc = hora + " " + elem.find('a', href="#").get_text(strip=True)
+        # Convertir a hora local
+        dt_local = hora_local(partido)
+        desc = f"{dt_local.strftime("%Y-%m-%d %H:%M")} {partido["liga"]} {partido["equipos"]}"
+
         # Set the plot info
         item.info["plot"] = desc
-        # Set the label info
         item.label = desc
+        item.art.thumb = url_constructor(partido["logo"])
         links_dic = {}
-        links = elem.find("ul").find_all('li', class_=False)
-        for idx, link in enumerate(links, start=1):
-            links_dic[f"enlace_{idx}"] = {
-                "url": link.find('a').get("href"),
+        for canal in partido["canales"]:
+            links_dic[canal["nombre"]] = {
+                "url": canal["url"],
                 "desc": desc,
-                "nom_canal": link.find('a').get_text(strip=True)
+                "nom_canal": f"{canal["nombre"]} {canal["calidad"]}"
             }
         item.set_callback(canales_eventos, links=links_dic)
         # Return the listitem as a generator.
@@ -131,3 +130,10 @@ def play_video(plugin, url_base):
             url_video = url_video.replace(',', '').replace('\\', '').replace('"', '')
             url_video = url_video + "|Referer=" + url2
             return url_video
+
+def hora_local(partido):
+    utc_zone = tz.gettz("UTC")
+    local_zone = tz.tzlocal()   # zona horaria dinámica (según el sistema)
+    dt_utc = parser.isoparse(partido["hora_utc"]).replace(tzinfo=utc_zone)
+    dt_local = dt_utc.astimezone(local_zone)
+    return dt_local
