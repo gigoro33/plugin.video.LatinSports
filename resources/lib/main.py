@@ -27,6 +27,6 @@ def root(plugin):
             item.set_callback(listItemsFutbolLibre)
         elif elem["chanel"] == "la14hd":
             item.set_callback(listItemsLa14Hd)
-        elif elem["chanel"] == "pelotaLibre":
-            item.set_callback(listItemsLa14Hd)
+        # elif elem["chanel"] == "pelotaLibre":
+        #     item.set_callback(listItemsLa14Hd)
         yield item
